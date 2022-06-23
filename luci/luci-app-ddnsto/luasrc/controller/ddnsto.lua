@@ -6,7 +6,7 @@ function index()
                 return
         end
 
-        entry({"admin","services", "ddnsto"}, call("redirect_index"), _("DDNSTO"), 20).dependent = true
+        entry({"admin","services", "ddnsto"}, call("redirect_index"), _("DDNSTO 远程控制"), 20).dependent = true
         entry({"admin","services", "ddnsto", "pages"}, call("ddnsto_index")).leaf = true
         if nixio.fs.access("/usr/lib/lua/luci/view/ddnsto/main_dev.htm") then
             entry({"admin","services", "ddnsto", "dev"}, call("ddnsto_dev")).leaf = true
@@ -140,7 +140,7 @@ local function status_container()
             value = "<a href=\"https://www.ddnsto.com/app/#/devices\" target=\"_blank\">点击前往DDNSTO控制台</a>"
         } 
     },
-    title = "DDNSTO 服务状态"
+    title = "服务状态"
   }  
   return c1
 end
@@ -244,6 +244,7 @@ local function feat_container()
             name = "feat_disk_path_selected",
             enum = getBlockDevices(),
             enumNames = getBlockDevices(),
+            required = true,
             title = "共享磁盘",
             type = "string",
             ["ui:hidden"] = "{{rootValue.feat_enabled !== true }}"
@@ -274,7 +275,7 @@ local function get_schema()
         actions = actions,
         containers = get_containers(),
         description = "DDNSTO远程控制是Koolcenter小宝开发的，支持http2的远程穿透控制插件。<br />\n            支持通过浏览器访问自定义域名访问内网设备后台、远程RDP/VNC桌面、远程文件管理等多种功能。<br />\n            详情请查看    <a href=\"https://www.ddnsto.com/\" target=\"_blank\">https://www.ddnsto.com</a>",
-        title = "DDNSTO"
+        title = "DDNSTO 远程控制"
     }
     return schema
 end
@@ -320,13 +321,6 @@ function ddnsto_submit()
         if req.enabled == true and isempty(req.token) then
             success = -1000
             error = "请填写正确用户Token（令牌）"
-        end
-        if req.enabled == false then
-            if req.feat_enabled == true then 
-                success = -1000
-                error = "无法单独开启拓展功能" 
-            end
-            
         end
 
         if req.token ~= nil and string.find(req.token, " ") then
