@@ -106,8 +106,7 @@ local function status_container()
         labels = { 
             {
             key = "服务状态",
-            value = running,
-            tt = non_system_mounts
+            value = running
         },
         {
             key = "插件版本",
@@ -275,7 +274,7 @@ local function get_schema()
         actions = actions,
         containers = get_containers(),
         description = "DDNSTO远程控制是Koolcenter小宝开发的，支持http2的远程穿透控制插件。<br />\n            支持通过浏览器访问自定义域名访问内网设备后台、远程RDP/VNC桌面、远程文件管理等多种功能。<br />\n            详情请查看    <a href=\"https://www.ddnsto.com/\" target=\"_blank\">https://www.ddnsto.com</a>",
-        title = "ddnsto"
+        title = "DDNSTO"
     }
     return schema
 end
@@ -323,7 +322,11 @@ function ddnsto_submit()
             error = "请填写正确用户Token（令牌）"
         end
         if req.enabled == false then
-            req.feat_enabled = false
+            if req.feat_enabled == true then 
+                success = -1000
+                error = "无法单独开启拓展功能" 
+            end
+            
         end
 
         if string.find(req.token, " ") then
@@ -336,6 +339,7 @@ function ddnsto_submit()
         end
 
         if req.feat_enabled == true then
+
             if (req.feat_port == nil or tonumber(req.feat_port) == nil or req.feat_port == 0)  then
                 success = -1000
                 error = "请填写正确的端口"
