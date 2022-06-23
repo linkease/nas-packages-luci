@@ -329,7 +329,7 @@ function ddnsto_submit()
             
         end
 
-        if string.find(req.token, " ") then
+        if req.token ~= nil and string.find(req.token, " ") then
             success = -1000
             error = "令牌勿包含空格"
         end
@@ -395,7 +395,7 @@ function ddnsto_submit()
         end
         x:set("ddnsto","@ddnsto[0]","feat_enabled",f_enabled)
 
-        local port = 3030
+        local port = 3033
         if req.feat_port ~= nil then
             port = req.feat_port
         end
@@ -413,7 +413,7 @@ function ddnsto_submit()
         end
         x:set("ddnsto","@ddnsto[0]","feat_password",password)
         
-        local path = req.feat_disk_path_selected
+        local path = ""
         if req.feat_disk_path_selected ~= nil then
             path = trim(req.feat_disk_path_selected)
         end
