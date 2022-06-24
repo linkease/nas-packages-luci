@@ -7,8 +7,8 @@
 include $(TOPDIR)/rules.mk
 
 LUCI_TITLE:=IstoreX
-LUCI_DEPENDS:=
-PKG_VERSION:=0.0.1.11
+PKG_VERSION:=0.0.1.12
+LUCI_DEPENDS:=+quickstart +luci-app-store
 
 include $(TOPDIR)/feeds/luci/luci.mk
 
