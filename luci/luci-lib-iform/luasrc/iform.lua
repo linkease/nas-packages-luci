@@ -76,3 +76,5 @@ function iform.fork_exec(command)
 	end
 end
 
+return iform
+
