@@ -12,19 +12,24 @@ end
 
 function iform.exec_to_log(command)
   local f = io.popen(command, "r")
-  local log = "Run command: " .. command
+  local log = command
   if f then
     local output = f:read('*all')
     f:close()
     log = log .. "\n" .. output .. const_log_end
   else
-    log = log .. "Failed" .. const_log_end
+    log = log .. " Failed" .. const_log_end
   end
   return log
 end
 
 function iform.response_log(logpath)
   local logfd = io.open(logpath, "r")
+  if logfd == nil then
+    http.write("log not found" .. const_log_end)
+    return
+  end
+
   local curr = logfd:seek()
   local size = logfd:seek("end")
   if size > 8*1024 then
@@ -47,8 +52,6 @@ function iform.response_log(logpath)
 
   if logfd then
     ltn12.pump.all(write_log, http.write)
-  else
-    http.write("log not found" .. const_log_end)
   end
 end
 
