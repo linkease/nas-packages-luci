@@ -4,7 +4,6 @@ local page_index = {"admin", "istorex","pages"}
 function index()
     if luci.sys.call("pgrep quickstart >/dev/null") == 0 then
         entry({"admin", "istorex"}, template("istorex/index")).leaf = true
-        entry({"admin", "istorex","pages"}, call("istorex_template")).leaf = true
         if nixio.fs.access("/usr/lib/lua/luci/view/istorex/main_dev.htm") then
             entry({"admin", "istorex_dev"}, call("istorex_template_dev")).leaf = true
         end
