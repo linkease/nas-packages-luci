@@ -10,7 +10,7 @@ local util = require "luci.util"
 module("luci.controller.linkease_backend", package.seeall)
 
 local BLOCKSIZE = 2048
-local LINKEASE_UNIX = "/var/run/linkease.unix"
+local LINKEASE_UNIX = "/var/run/linkease.sock"
 
 function index()
     entry({"linkease"}, call("linkease_backend")).leaf=true
