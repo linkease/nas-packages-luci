@@ -16,7 +16,7 @@ function index()
     entry({"istore"}, call("istore_backend")).leaf=true
 end
 
-function sink_socket(sock, io_err) 
+local function sink_socket(sock, io_err) 
   if sock then 
     return function(chunk, err) 
       if not chunk then 
@@ -50,7 +50,7 @@ local function get_session(sid)
   return nil, nil
 end
 
-function chunksource(sock, buffer)
+local function chunksource(sock, buffer)
 	buffer = buffer or ""
 	return function()
 		local output
