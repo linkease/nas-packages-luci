@@ -29,6 +29,9 @@ load_quickstart_cfg() {
     export ISTORE_DL_DIR="$dl_dir"
     export ISTORE_CACHE_DIR="$tmp_dir"
     export ISTORE_PUBLIC_DIR="$pub_dir"
+
+    mkdir -p "$ISTORE_CONF_DIR" "$ISTORE_DL_DIR" "$ISTORE_CACHE_DIR" "$ISTORE_PUBLIC_DIR"
+    chmod 777 "$ISTORE_DL_DIR"
 }
 
 auto_setup_app() {
