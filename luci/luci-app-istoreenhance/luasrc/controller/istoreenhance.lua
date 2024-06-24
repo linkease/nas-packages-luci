@@ -16,18 +16,11 @@ function istoreenhance_status()
 	local port = tonumber(uci:get_first("istoreenhance", "istoreenhance", "port"))
 
 	local status = {
-		running = (sys.call("pidof istoreenhance >/dev/null") == 0),
+		running = (sys.call("pidof iStoreEnhance >/dev/null") == 0),
 		port = (port or 8897)
 	}
 
 	luci.http.prepare_content("application/json")
 	luci.http.write_json(status)
-end
-
-function get_params(name)
-    local data = {
-        prefix=luci.dispatcher.build_url(unpack({"admin", "services", "istoreenhance", name})),
-    }
-    return data
 end
 

@@ -1,6 +1,3 @@
---wulishui <wulishui@gmail.com> ,20200911
---jjm2473 <jjm2473@gmail.com> ,20210127
-
 local m, s
 
 m = Map("istoreenhance", translate("iStoreEnhance"), translate("iStoreEnhance is a tool to fix network issues for iStore."))
