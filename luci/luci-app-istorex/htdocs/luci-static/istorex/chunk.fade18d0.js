@@ -1,0 +1,1 @@
+import{_ as o,G as r,o as t,c as n,H as c}from"./index.js?v=bd1b282f";const s={},a={id:"page",class:"page-container"};function i(_,d){const e=r("router-loading");return t(),n("div",a,[c(e)])}var p=o(s,[["render",i],["__file","/projects/github/linkease/istorex/web/src/pages/router/device/index.vue"]]);export{p as default};
