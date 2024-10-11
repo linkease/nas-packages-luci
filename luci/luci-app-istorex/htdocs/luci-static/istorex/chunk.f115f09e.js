@@ -1,1 +1,0 @@
-import{_ as s,G as o,o as r,A as t,B as n,S as a,H as c}from"./index.js?v=bd1b282f";const _={};function i(u,l){const e=o("router-view");return r(),t(a,null,{default:n(()=>[c(e)]),_:1})}var f=s(_,[["render",i],["__file","/projects/github/linkease/istorex/web/src/pages/nas/index.vue"]]);export{f as default};
