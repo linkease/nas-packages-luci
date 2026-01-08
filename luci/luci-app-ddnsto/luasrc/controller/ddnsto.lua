@@ -109,27 +109,17 @@ local function parse_device_id(raw)
   return did or cleaned
 end
 
-local function normalize_device_name(device_name)
-  local name = tostring(device_name or "")
-  name = name:gsub("^%s+", ""):gsub("%s+$", "")
-  if name == "" then
-    return ""
+local function normalize_index(index)
+  local idx = index
+  if not (idx and tostring(idx):match("^%d+$")) then
+    idx = "0"
   end
-  if not name:match("^[A-Za-z0-9]+$") then
-    return ""
-  end
-  if #name > 20 then
-    name = name:sub(1, 20)
-  end
-  return name
+  return idx
 end
 
-local function fetch_device_id(device_name)
-  local name = normalize_device_name(device_name)
-  local cmd = "/usr/sbin/ddnstod -w"
-  if name ~= "" then
-    cmd = string.format("/usr/sbin/ddnstod -n %s -w", name)
-  end
+local function fetch_device_id(index)
+  local idx = normalize_index(index)
+  local cmd = string.format("/usr/sbin/ddnstod -x %s -w", idx)
   return parse_device_id(get_command(cmd))
 end
 
@@ -155,17 +145,6 @@ end
 
 local function has_space(v)
   return v ~= nil and tostring(v):find("%s") ~= nil
-end
-
-local function is_device_name(v)
-  if is_empty(v) then
-    return true
-  end
-  local name = tostring(v)
-  if #name > 20 then
-    return false
-  end
-  return name:match("^[A-Za-z0-9]+$") ~= nil
 end
 
 -- LuCI CSRF Check
@@ -230,7 +209,7 @@ local function read_config()
   local cfg = {
     enabled      = "1",
     token        = "",
-    device_name  = "",
+    index        = "0",
     logger       = "0",
     feat_enabled = "0",
     feat_port    = "3033",
@@ -246,7 +225,7 @@ local function read_config()
   uci:foreach("ddnsto", "ddnsto", function(s)
     cfg.enabled      = s.enabled or cfg.enabled
     cfg.token        = s.token or cfg.token
-    cfg.device_name  = s.device_name or s.index or cfg.device_name
+    cfg.index        = s.index or cfg.index
     cfg.logger       = s.logger or cfg.logger
     cfg.feat_enabled = s.feat_enabled or cfg.feat_enabled
     cfg.feat_port    = s.feat_port or cfg.feat_port
@@ -257,7 +236,7 @@ local function read_config()
   end)
 
   do
-    local did = fetch_device_id(cfg.device_name)
+    local did = fetch_device_id(cfg.index)
     cfg.device_id = did
     cfg.deviceId = did
   end
@@ -360,7 +339,7 @@ function api_config()
   local enabled      = param(body, "enabled")
   local ddnsto_token = param(body, "ddnsto_token")
 
-  local device_name  = param(body, "device_name")
+  local index        = param(body, "index")
   local logger       = param(body, "logger")
   local feat_enabled = param(body, "feat_enabled")
   local feat_port    = param(body, "feat_port")
@@ -372,11 +351,8 @@ function api_config()
   if enabled      and not is_bool01(enabled)      then return bad_request("bad enabled") end
   if logger       and not is_bool01(logger)       then return bad_request("bad logger") end
   if feat_enabled and not is_bool01(feat_enabled) then return bad_request("bad feat_enabled") end
-  if device_name and not is_device_name(device_name) then
-    return bad_request("设备名称仅支持英文字符或数字，长度不超过 20")
-  end
 
-  local has_payload = enabled ~= nil or ddnsto_token ~= nil or device_name ~= nil or logger ~= nil
+  local has_payload = enabled ~= nil or ddnsto_token ~= nil or index ~= nil or logger ~= nil
     or feat_enabled ~= nil or feat_port ~= nil or feat_username ~= nil or feat_password ~= nil
     or feat_disk_path_selected ~= nil
   if not has_payload then
@@ -392,6 +368,14 @@ function api_config()
 
   if ddnsto_token ~= nil and has_space(ddnsto_token) then
     return bad_request("令牌勿包含空格")
+  end
+
+  if not is_uint(index) then
+    return bad_request("请填写正确的设备编号，仅允许数字")
+  end
+  local index_num = tonumber(index)
+  if index_num < 0 or index_num > 99 then
+    return bad_request("请填写正确的设备编号，仅允许数字")
   end
 
   if feat_on then
@@ -426,7 +410,7 @@ function api_config()
   -- 白名单写入：只写我们明确允许前端控制的字段
   if enabled      then uci:set("ddnsto", sid, "enabled", enabled) end
   if ddnsto_token ~= nil then uci:set("ddnsto", sid, "token", ddnsto_token) end
-  if device_name  ~= nil then uci:set("ddnsto", sid, "device_name", device_name) end
+  if index        then uci:set("ddnsto", sid, "index", index) end
   if logger       then uci:set("ddnsto", sid, "logger", logger) end
   if feat_enabled then uci:set("ddnsto", sid, "feat_enabled", feat_enabled) end
   if feat_port    then uci:set("ddnsto", sid, "feat_port", feat_port) end
@@ -569,12 +553,12 @@ function api_status()
   local jsonc = require "luci.jsonc"
 
   local enabled, token = "0", ""
-  local address, device_name = "", ""
+  local address, index = "", "0"
   uci:foreach("ddnsto", "ddnsto", function(s)
     enabled = s.enabled or "0"
     token   = s.token or ""
     address = s.address or ""
-    device_name = s.device_name or s.index or device_name
+    index   = s.index or index
   end)
 
   local raw = sys.exec([[ubus call service list '{"name":"ddnsto"}' 2>/dev/null]]) or ""
@@ -602,7 +586,7 @@ function api_status()
 
   local did = ""
   do
-    did = fetch_device_id(device_name)
+    did = fetch_device_id(index)
   end
 
   write_json({

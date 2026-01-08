@@ -15,5 +15,6 @@
   <div id="app" class="ddnsto-root" data-ddnsto-shadow></div>
 </div>
 
-<script type="module" crossorigin src="/luci-static/ddnsto/index.js?<%# ?v=PKG_VERSION %>"></script>
+<% local cache_bust = os.time() %>
+<script type="module" crossorigin src="/luci-static/ddnsto/index.js?v=<%=cache_bust%>"></script>
 <%+footer%>
