@@ -114,7 +114,7 @@ local function normalize_device_name(device_name)
   name = name:gsub("^%s+", ""):gsub("%s+$", "")
   if name == "" then
     return ""
-  end
+  end 
   if not name:match("^[A-Za-z0-9]+$") then
     return ""
   end
@@ -128,7 +128,7 @@ local function fetch_device_id(device_name)
   local name = normalize_device_name(device_name)
   local cmd = "/usr/sbin/ddnstod -w"
   if name ~= "" then
-    cmd = string.format("/usr/sbin/ddnstod -n %s -w", name)
+    cmd = string.format("/usr/sbin/ddnstod -m %s -w", name)
   end
   return parse_device_id(get_command(cmd))
 end
@@ -240,7 +240,6 @@ local function read_config()
     address      = "",
     mounts       = {},
     device_id    = "",
-    deviceId     = "",
   }
 
   uci:foreach("ddnsto", "ddnsto", function(s)
@@ -259,7 +258,6 @@ local function read_config()
   do
     local did = fetch_device_id(cfg.device_name)
     cfg.device_id = did
-    cfg.deviceId = did
   end
 
   -- Get mounts (via block info)
@@ -614,7 +612,6 @@ function api_status()
       token_set = (token and #token > 0) or false,
       address = address,
       device_id = did,
-      deviceId = did,
       hostname = hostname,
       version = version,
     }
