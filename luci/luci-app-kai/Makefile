@@ -17,7 +17,7 @@ define Package/luci-app-kai/conffiles
 /etc/config/kai
 endef
 
-define Package/luci-kai/postrm
+define Package/luci-app-kai/postrm
 #!/bin/sh
 rm -f /tmp/luci-indexcache
 exit 0
