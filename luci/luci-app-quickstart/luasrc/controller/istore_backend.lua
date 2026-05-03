@@ -6,6 +6,8 @@ local nixio = require "nixio"
 local ltn12 = require "luci.ltn12"
 local table = require "table"
 local util = require "luci.util"
+local fs = require "nixio.fs"
+local jsonc = require "luci.jsonc"
 
 module("luci.controller.istore_backend", package.seeall)
 
@@ -57,6 +59,84 @@ local function get_session()
     end
   end
   return nil, nil
+end
+
+local function round_temp(value)
+  return math.floor(value * 10 + 0.5) / 10
+end
+
+local function read_cpu_temperature_from_thermal_zone()
+  local fallback
+  local zones = fs.glob("/sys/class/thermal/thermal_zone*")
+
+  if not zones then
+    return nil
+  end
+
+  for zone in zones do
+    local raw_temp = fs.readfile(zone .. "/temp")
+    if raw_temp then
+      local value = tonumber(raw_temp:match("[-0-9.]+"))
+
+      if value then
+        if value > 1000 then
+          value = value / 1000
+        end
+
+        local zone_type = fs.readfile(zone .. "/type") or ""
+        if zone_type:lower():find("cpu", 1, true) then
+          return round_temp(value)
+        end
+
+        fallback = fallback or value
+      end
+    end
+  end
+
+  if fallback then
+    return round_temp(fallback)
+  end
+
+  return nil
+end
+
+local function read_cpu_temperature_from_luci_ubus()
+  local tempinfo = util.ubus("luci", "getTempInfo", {}) or {}
+
+  if type(tempinfo.tempinfo) == "string" then
+    local value = tempinfo.tempinfo:match("CPU:%s*([0-9.]+)")
+    if value then
+      return round_temp(tonumber(value))
+    end
+  end
+
+  return nil
+end
+
+local function read_cpu_temperature()
+  return read_cpu_temperature_from_thermal_zone() or read_cpu_temperature_from_luci_ubus()
+end
+
+local function request_needs_cpu_temperature()
+  local uri = http.getenv("REQUEST_URI") or ""
+  return uri:match("/istore/system/status/?") ~= nil
+end
+
+local function add_cpu_temperature(body)
+  local data = jsonc.parse(body or "")
+  local temperature
+
+  if type(data) ~= "table" or type(data.result) ~= "table" or data.result.cpuTemperature ~= nil then
+    return body
+  end
+
+  temperature = read_cpu_temperature()
+  if temperature == nil then
+    return body
+  end
+
+  data.result.cpuTemperature = temperature
+  return jsonc.stringify(data)
 end
 
 local function chunksource(sock, buffer)
@@ -177,7 +257,24 @@ function istore_backend()
   end
 
   local body_buffer = linesrc(true)
-  if chunked == 1 then
+  if request_needs_cpu_temperature() then
+    local body = {}
+    local function body_sink(chunk)
+      if chunk then
+        body[#body + 1] = chunk
+      end
+      return 1
+    end
+
+    if chunked == 1 then
+      ltn12.pump.all(chunksource(sock, body_buffer), body_sink)
+    else
+      local body_source = ltn12.source.cat(ltn12.source.string(body_buffer), sock:blocksource())
+      ltn12.pump.all(body_source, body_sink)
+    end
+
+    http.write(add_cpu_temperature(table.concat(body)))
+  elseif chunked == 1 then
     ltn12.pump.all(chunksource(sock, body_buffer), http.write)
   else
     local body_source = ltn12.source.cat(ltn12.source.string(body_buffer), sock:blocksource())
@@ -186,4 +283,3 @@ function istore_backend()
 
   sock:close()
 end
-
