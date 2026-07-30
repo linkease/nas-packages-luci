@@ -25,6 +25,7 @@ end
 function linkeasefull_status()
 	local sys  = require "luci.sys"
 	local uci  = require "luci.model.uci".cursor()
+	local linkease_enabled = (uci:get_first("linkease", "linkease", "enabled") == "1")
 
 	local status = {
 		running = (sys.call("pidof linkease-full >/dev/null") == 0),
@@ -32,7 +33,9 @@ function linkeasefull_status()
 		legacy_port = 8897,
 		base_path = "/apps/",
 		lan_ip = uci:get("network", "lan", "ipaddr") or "",
-		proxy_prefix_enabled = uhttpd_has_apps_proxy_prefix()
+		proxy_prefix_enabled = uhttpd_has_apps_proxy_prefix(),
+		conflict = linkease_enabled,
+		conflict_service = linkease_enabled and "linkease" or ""
 	}
 
 	luci.http.prepare_content("application/json")
