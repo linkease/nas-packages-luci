@@ -1,13 +1,14 @@
 module("luci.controller.linkeasefull", package.seeall)
 
 function index()
+	entry({"admin", "services", "linkeasefull_status"}, call("linkeasefull_status"))
+	entry({"admin", "services", "linkeasefull", "auth"}, call("linkeasefull_auth")).leaf = true
+
 	if not nixio.fs.access("/etc/config/linkeasefull") then
 		return
 	end
 
 	entry({"admin", "services", "linkeasefull"}, cbi("linkeasefull"), _("LinkEase Full"), 21).dependent = true
-	entry({"admin", "services", "linkeasefull_status"}, call("linkeasefull_status"))
-	entry({"admin", "services", "linkeasefull", "auth"}, call("linkeasefull_auth")).leaf = true
 end
 
 local function uhttpd_has_apps_proxy_prefix()
