@@ -1,15 +1,5 @@
 <script type="text/javascript">//<![CDATA[
-function openKai(port) {
-	var target = new URL(window.location.href);
-	target.protocol = 'http:';
-	target.port = String(port);
-	target.pathname = '/apps/kai/web/';
-	target.search = '';
-	target.hash = '';
-
-	var authUrl = '<%=url("admin/services/linkease_auth/auth")%>';
-	window.open(authUrl + '?return=' + encodeURIComponent(target.href), '_blank', 'noopener');
-}
+var kaiOpenUrl = '<%=url("admin/services/linkease_apps/open")%>?id=kai';
 
 XHR.poll(5, '<%=url("admin/services/kai_status")%>', null,function(x, st){
 	var el = document.getElementById('kai_status');
@@ -19,7 +9,7 @@ XHR.poll(5, '<%=url("admin/services/kai_status")%>', null,function(x, st){
 		}
 		if (st.running){
 			el.innerHTML = '<br/><em style=\"color:green\"><%:The KAI service is running.%></em>'
-				+ "<br/><br/><input class=\"btn cbi-button cbi-button-apply\" type=\"button\" value=\" <%:Click to open KAI%> \" onclick=\"openKai(" + Number(st.port) + ")\"/>";
+				+ "<br/><br/><input class=\"btn cbi-button cbi-button-apply\" type=\"button\" value=\" <%:Click to open KAI%> \" onclick=\"window.open(kaiOpenUrl, '_blank', 'noopener')\"/>";
 		}
 	}
 });
