@@ -2,7 +2,7 @@
 <%
   local jsonc = require "luci.jsonc"
   local uci = require "luci.model.uci".cursor()
-local asset_version = "0.15.0-test20260928-r1"
+    local asset_version = "0.17.0-test20261022-release-fc1c1948e8de"
   local features = { "_lua_force_array_" }
   local configs = {}
   if luci.sys.call("which ota >/dev/null 2>&1 && ota >/dev/null 2>&1") == 0 then
