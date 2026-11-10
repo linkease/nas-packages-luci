@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-linkeasefull-embed
-PKG_VERSION:=1.2.0-r1
+PKG_VERSION:=1.2.0-r2
 PKG_RELEASE:=
 
 PKG_BUILD_PARALLEL:=1
@@ -28,11 +28,23 @@ define Package/$(PKG_NAME)/description
   Register OpenWrt LuCI as a LinkEaseFull desktop module and provide embedded-mode assets.
 endef
 
+define Package/$(PKG_NAME)/postinst
+#!/bin/sh
+# Retire only this package-owned legacy registration.
+root="$${IPKG_INSTROOT:-}"
+legacy="$${root}/usr/share/linkeasefull/desktop-apps.d/15-openwrt-luci.json"
+if [ "$$(readlink "$${legacy}" 2>/dev/null)" = "/usr/share/linkeasefull/openwrt-luci/openwrt-luci.json" ]; then
+	rm -f "$${legacy}"
+fi
+rmdir "$${root}/usr/share/linkeasefull/desktop-apps.d" 2>/dev/null || true
+exit 0
+endef
+
 define Package/$(PKG_NAME)/prerm
 #!/bin/sh
 set -e
 root="$${IPKG_INSTROOT:-}"
-registration="$${root}/usr/share/linkeasefull/desktop-apps.d/15-openwrt-luci.json"
+registration="$${root}/usr/share/linkease/apps.d/15-openwrt-luci.json"
 if [ "$$(readlink "$${registration}" 2>/dev/null)" = "/usr/share/linkeasefull/openwrt-luci/openwrt-luci.json" ]; then
 	rm -f "$${registration}"
 fi
@@ -46,13 +58,13 @@ define Build/Compile
 endef
 
 define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/usr/share/linkeasefull/openwrt-luci $(1)/usr/share/linkeasefull/desktop-apps.d
+	$(INSTALL_DIR) $(1)/usr/share/linkeasefull/openwrt-luci $(1)/usr/share/linkease/apps.d
 	$(INSTALL_DIR) $(1)/www/luci-static/linkeasefull-embed
 	$(INSTALL_DATA) ./files/openwrt-luci/openwrt-luci.json $(1)/usr/share/linkeasefull/openwrt-luci/openwrt-luci.json
 	$(INSTALL_DATA) ./files/openwrt-luci/openwrt.svg $(1)/usr/share/linkeasefull/openwrt-luci/openwrt.svg
 	$(INSTALL_DATA) ./files/www/embed.css $(1)/www/luci-static/linkeasefull-embed/embed.css
 	$(INSTALL_DATA) ./files/www/embed-prelude.js $(1)/www/luci-static/linkeasefull-embed/embed-prelude.js
-	ln -sf /usr/share/linkeasefull/openwrt-luci/openwrt-luci.json $(1)/usr/share/linkeasefull/desktop-apps.d/15-openwrt-luci.json
+	ln -sf /usr/share/linkeasefull/openwrt-luci/openwrt-luci.json $(1)/usr/share/linkease/apps.d/15-openwrt-luci.json
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
