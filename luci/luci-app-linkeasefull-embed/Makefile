@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-linkeasefull-embed
-PKG_VERSION:=1.2.0-r2
+PKG_VERSION:=1.2.0-r3
 PKG_RELEASE:=
 
 PKG_BUILD_PARALLEL:=1
@@ -30,13 +30,13 @@ endef
 
 define Package/$(PKG_NAME)/postinst
 #!/bin/sh
-# Retire only this package-owned legacy registration.
+# Compatibility entry for desktops which only scan the old directory.
 root="$${IPKG_INSTROOT:-}"
 legacy="$${root}/usr/share/linkeasefull/desktop-apps.d/15-openwrt-luci.json"
-if [ "$$(readlink "$${legacy}" 2>/dev/null)" = "/usr/share/linkeasefull/openwrt-luci/openwrt-luci.json" ]; then
-	rm -f "$${legacy}"
+if [ ! -e "$${legacy}" ] && [ ! -L "$${legacy}" ]; then
+	mkdir -p "$${legacy%/*}"
+	ln -s /usr/share/linkeasefull/openwrt-luci/openwrt-luci.json "$${legacy}" || exit $$?
 fi
-rmdir "$${root}/usr/share/linkeasefull/desktop-apps.d" 2>/dev/null || true
 exit 0
 endef
 
@@ -44,10 +44,13 @@ define Package/$(PKG_NAME)/prerm
 #!/bin/sh
 set -e
 root="$${IPKG_INSTROOT:-}"
-registration="$${root}/usr/share/linkease/apps.d/15-openwrt-luci.json"
-if [ "$$(readlink "$${registration}" 2>/dev/null)" = "/usr/share/linkeasefull/openwrt-luci/openwrt-luci.json" ]; then
-	rm -f "$${registration}"
-fi
+for directory in /usr/share/linkease/apps.d /usr/share/linkeasefull/desktop-apps.d; do
+	registration="$${root}$${directory}/15-openwrt-luci.json"
+	if [ "$$(readlink "$${registration}" 2>/dev/null)" = "/usr/share/linkeasefull/openwrt-luci/openwrt-luci.json" ]; then
+		rm -f "$${registration}"
+	fi
+done
+rmdir "$${root}/usr/share/linkeasefull/desktop-apps.d" 2>/dev/null || true
 exit 0
 endef
 

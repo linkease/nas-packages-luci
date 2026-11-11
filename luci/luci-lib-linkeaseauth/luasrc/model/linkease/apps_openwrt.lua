@@ -2,7 +2,8 @@ local M = {}
 
 local proxy_mapping = "/apps=http://127.0.0.1:19290"
 local registration_dirs = {
-	"/usr/share/linkease/apps.d"
+	"/usr/share/linkease/apps.d",
+	"/usr/share/linkeasefull/desktop-apps.d"
 }
 
 local function defaults()

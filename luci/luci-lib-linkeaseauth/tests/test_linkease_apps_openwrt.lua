@@ -172,7 +172,39 @@ default_deps.fs.dir = function(directory)
  return function() return nil end
 end
 apps_openwrt.new(default_deps):resolve("missing-app")
-equal(#scanned, 1, "default discovery must scan only one registry")
+equal(#scanned, 2, "default discovery must retain the old desktop fallback")
 equal(scanned[1], "/usr/share/linkease/apps.d")
+equal(scanned[2], "/usr/share/linkeasefull/desktop-apps.d")
+
+local function compatibility_lookup(current, legacy, explicit)
+	local deps = dependencies("fastnet.json", true)
+	deps.registration_dirs = explicit
+	deps.fs.dir = function(directory)
+		local value = directory == "/usr/share/linkease/apps.d" and current
+			or directory == "/usr/share/linkeasefull/desktop-apps.d" and legacy
+		local emitted = false
+		return function()
+			if emitted or not value then return nil end
+			emitted = true
+			return "17-fastnet.json"
+		end
+	end
+	local readfile = deps.fs.readfile
+	deps.fs.readfile = function(path)
+		if path == "/usr/share/linkease/apps.d/17-fastnet.json" then return current end
+		if path == "/usr/share/linkeasefull/desktop-apps.d/17-fastnet.json" then return legacy end
+		return readfile(path)
+	end
+	deps.json.parse = function(raw)
+		if raw == "new" then return { id = "fastnet", desktop = { mode = "module" }, standalone = { basePath = "/apps/fastnet/new/" } } end
+		if raw == "old" then return { id = "fastnet", desktop = { mode = "module" }, standalone = { basePath = "/apps/fastnet/old/" } } end
+		if raw == "state" then return { active = "gateway" } end
+	end
+	return apps_openwrt.new(deps):resolve("fastnet")
+end
+equal(compatibility_lookup("new", "old").url, "/apps/fastnet/new/", "canonical ID wins")
+equal(compatibility_lookup(nil, "old").url, "/apps/fastnet/old/", "legacy-only app stays visible")
+equal(compatibility_lookup("invalid", "old").url, "/apps/fastnet/old/", "invalid JSON must not hide legacy")
+equal(compatibility_lookup(nil, "old", { "/explicit" }).registered, false, "explicit directories stay isolated")
 
 print("linkease apps OpenWrt adapter tests passed")
