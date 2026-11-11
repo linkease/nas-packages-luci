@@ -35,26 +35,41 @@ function action_status()
 end
 
 function action_open()
-	compat():open("fastnet")
+	local dispatcher = require "luci.dispatcher"
+	require("luci.http").redirect(dispatcher.build_url("admin", "services", "fastnet", "embed") .. "?standalone=1")
 end
 
--- Embedded pages require the app gateway: it preserves HTTPS, authentication,
--- and one origin for the iframe handshake. Never downgrade to a public port.
+-- Only the launch metadata passes through LuCI. The iframe and all test data
+-- connect to the configured FastNet service port in the browser.
 function action_embed()
-	local http = require "luci.http"
-	local ctx = require("luci.dispatcher").context
-	if http.getenv("REQUEST_METHOD") ~= "GET" then http.status(405); return end
-	if not ctx.authsession or ctx.authuser ~= "root" then http.status(403); return end
-	local decision = require("luci.model.linkease.apps_openwrt").new():resolve("fastnet")
-	local url = decision.url
-	if decision.available ~= true or type(url) ~= "string" or url:sub(1,1) ~= "/" or url:sub(1,2) == "//" then
-		http.status(503); http.prepare_content("text/plain"); http.write("FastNet same-origin gateway unavailable"); return
-	end
-	local theme = http.formvalue("theme") == "dark" and "dark" or "light"
-	url = url .. (url:find("?",1,true) and "&" or "?") .. "embed=quickstart&theme=" .. theme
-	if http.formvalue("view") == "history" then url = url .. "&view=history" end
-	http.header("Cache-Control", "no-store")
-	http.redirect(require("luci.dispatcher").build_url("admin", "services", "linkease_auth", "auth") .. "?return=" .. http.urlencode(url))
+ local http = require "luci.http"
+ local ctx = require("luci.dispatcher").context
+ if http.getenv("REQUEST_METHOD") ~= "GET" then http.status(405); return end
+ if not ctx.authsession or ctx.authuser ~= "root" then http.status(403); return end
+ local authority = http.getenv("HTTP_HOST") or ""
+ local host = authority:match("^(%[[%x:%.]+%]):?%d*$") or authority:match("^([%w%.%-]+):?%d*$")
+ local uci = require("luci.model.uci").cursor()
+ local port = tonumber(uci:get_first("fastnet", "fastnet", "port") or "3200")
+ if uci:get_first("fastnet", "fastnet", "enabled") == "0" or not host or not port or port % 1 ~= 0 or port < 1 or port > 65535 then
+  http.status(503); return
+ end
+ local url = "http://" .. host .. ":" .. tostring(port) .. "/webui/"
+ local query = {}
+ if http.formvalue("standalone") ~= "1" then
+  query[#query+1] = "embed=quickstart"
+  query[#query+1] = "theme=" .. (http.formvalue("theme") == "dark" and "dark" or "light")
+ end
+ if http.formvalue("view") == "history" then query[#query+1] = "view=history" end
+ local token = uci:get_first("fastnet", "fastnet", "token") or ""
+ if token ~= "" then query[#query+1] = "token=" .. http.urlencode(token) end
+ if #query > 0 then url = url .. "?" .. table.concat(query, "&") end
+ http.header("Cache-Control", "no-store")
+ http.header("Referrer-Policy", "no-referrer")
+ if http.formvalue("format") == "json" then
+  http.prepare_content("application/json"); http.write_json({url=url})
+ else
+  http.redirect(url)
+ end
 end
 
 function action_card_summary() require("luci.model.fastnet.card").new():handle("summary") end
