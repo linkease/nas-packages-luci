@@ -12,11 +12,6 @@ LUCI_EXTRA_DEPENDS:=fastnet (>=0.8.9-$(if $(CONFIG_USE_APK),r)1)
 LUCI_PKGARCH:=all
 PKG_VERSION:=0.8.9-r2
 PKG_RELEASE:=
-# Keep OPKG translation ordering; APK requires a numeric release version.
-PKG_PO_VERSION:=git-26.313.00000-082
-ifeq ($(CONFIG_USE_APK),y)
-PKG_PO_VERSION:=$(PKG_VERSION)
-endif
 LUCI_MINIFY_CSS:=0
 LUCI_MINIFY_JS:=0
 
